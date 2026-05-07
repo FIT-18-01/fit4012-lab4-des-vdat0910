@@ -1,6 +1,6 @@
 # Report 1 page - Lab 4 DES / TripleDES
 
-## Muc tieu
+## Muc tieu / Objective
 
 - Cai dat DES va TripleDES theo contract stdin.
 - Ho tro ma hoa/giai ma, multi-block va zero padding.

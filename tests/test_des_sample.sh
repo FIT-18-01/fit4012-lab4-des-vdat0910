@@ -1,30 +1,17 @@
 #!/usr/bin/env bash
-# Test DES sample encryption from the starter code
-# Compile program, run with sample plaintext/key, and verify ciphertext
-
 set -euo pipefail
 
-echo "===== Test 1: DES Sample Case ====="
-
-# Compile
-cd "$(dirname "$0")/.."
 g++ -std=c++17 -Wall -Wextra -pedantic des.cpp -o des
 
-# Run and capture output
-OUTPUT=$(./des)
+plaintext="0000000100100011010001010110011110001001101010111100110111101111"
+key="0001001100110100010101110111100110011011101111001101111111110001"
+expected="1000010111101000000100110101010000001111000010101011010000000101"
 
-# Expected ciphertext from standard DES test vector
-# Input: plaintext = "0001001000110100010101100111100010011010101111001101111011110001"
-#        key = "0001001100110100010101110111100110011011101111001101111111110001"
-# Expected output should match DES standard test vector
+output=$(printf "1\n%s\n%s\n" "$plaintext" "$key" | ./des | tr -d '\r\n')
 
-echo "$OUTPUT"
-
-# Check if ciphertext is produced
-if echo "$OUTPUT" | grep -q "Ciphertext:"; then
-    echo "✓ Sample DES encryption test PASSED"
-    exit 0
-else
-    echo "✗ Sample DES encryption test FAILED"
-    exit 1
+if [[ "$output" != "$expected" ]]; then
+  echo "Expected ciphertext $expected, got $output"
+  exit 1
 fi
+
+echo "PASS: DES sample vector"

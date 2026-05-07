@@ -57,33 +57,29 @@ cmake --build build
 
 ## 3. Input / Đầu vào
 
-TODO_STUDENT: Mô tả rõ đầu vào của chương trình sau khi em hoàn thiện bài lab.
-
-Gợi ý nên nêu:
-- plaintext đang được nhập như thế nào
-- key đang được nhập như thế nào
-- chương trình nhận 1 block hay nhiều block
-- định dạng dữ liệu là chuỗi bit, chuỗi ký tự hay file
+Chuong trinh nhan du lieu tu stdin theo contract o muc 11:
+- Dong dau la mode (1, 2, 3, 4).
+- Cac dong sau la plaintext/ciphertext va key theo thu tu yeu cau.
+- Dinh dang du lieu la chuoi bit (chi gom 0/1).
+- DES mode 1/2 ho tro nhieu block; plaintext/ciphertext co the dai hon 64 bit.
+- TripleDES mode 3/4 nhan dung 1 block 64 bit.
 
 ## 4. Output / Đầu ra
 
-TODO_STUDENT: Mô tả rõ đầu ra của chương trình.
-
-Gợi ý nên nêu:
-- ciphertext hiển thị ra sao
-- có in round keys hay không
-- có hỗ trợ giải mã hay không
-- với TripleDES thì đầu ra gồm những gì
+Chuong trinh in ra ket qua cuoi cung duoi dang chuoi bit:
+- Mode 1: ciphertext nhi phan (dai boi so 64).
+- Mode 2: plaintext nhi phan (dai boi so 64, gom ca phan padding).
+- Mode 3: ciphertext nhi phan 64 bit.
+- Mode 4: plaintext nhi phan 64 bit.
+Ngoai ra co the co thong bao loi tren stderr khi input sai dinh dang.
 
 ## 5. Padding đang dùng
 
-TODO_STUDENT: Giải thích cơ chế padding em dùng.
-
-Gợi ý:
-- nếu plaintext dài hơn 64 bit thì chia block như thế nào
-- nếu thiếu bit thì pad bằng `0` ra sao
-- hạn chế của zero padding là gì
-- vì sao cách này chỉ phù hợp cho bài học nhập môn, không phải thiết kế an toàn hoàn chỉnh trong thực tế
+Chuong trinh dung zero padding cho DES multi-block:
+- Neu plaintext dai hon 64 bit: chia thanh cac block 64 bit va ma hoa tuan tu.
+- Neu block cuoi thieu bit: noi them cac bit 0 cho du 64.
+- Khi giai ma, chuong trinh tra lai toan bo chuoi (bao gom phan padding).
+Han che cua zero padding la khong phan biet duoc du lieu that ket thuc bang bit 0 hay padding, nen khong an toan cho thuc te. Cach nay chi phu hop cho bai hoc nhap mon.
 
 ## 6. Tests bắt buộc
 
@@ -123,7 +119,7 @@ Trước khi nộp, cần có:
 - `tests/` với ít nhất 5 test
 - có negative test cho `tamper` và `wrong key`
 - `logs/` có ít nhất 1 file minh chứng thật
-- không còn dòng `TODO_STUDENT`
+- khong con placeholder TODO
 
 ## 10. Lưu ý về CI
 
@@ -132,7 +128,7 @@ CI sẽ **không chỉ kiểm tra file có tồn tại** mà còn kiểm tra:
 - các mục bắt buộc trong report
 - sự hiện diện của negative tests
 - có minh chứng trong `logs/`
-- repo **không còn placeholder `TODO_STUDENT`**
+- repo **khong con placeholder TODO**
 
 Vì vậy repo starter này sẽ **chưa pass CI** cho tới khi sinh viên hoàn thiện nội dung.
 

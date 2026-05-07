@@ -1,26 +1,30 @@
 #!/usr/bin/env bash
-# Test DES tamper detection
-# Verify that a tampered ciphertext decrypts to different plaintext
-
 set -euo pipefail
 
-echo "===== Test 4: Tamper Detection (Negative Test) ====="
+g++ -std=c++17 -Wall -Wextra -pedantic des.cpp -o des
 
-cd "$(dirname "$0")/.."
+plaintext="0000000100100011010001010110011110001001101010111100110111101111"
+key="0001001100110100010101110111100110011011101111001101111111110001"
 
-# Compile if not already compiled
-if [ ! -f des ]; then
-    g++ -std=c++17 -Wall -Wextra -pedantic des.cpp -o des
+ciphertext=$(printf "1\n%s\n%s\n" "$plaintext" "$key" | ./des | tr -d '\r\n')
+
+flip_bit() {
+  local value="$1"
+  local index="$2"
+  local bit="${value:$index:1}"
+  local flipped="0"
+  if [[ "$bit" == "0" ]]; then
+    flipped="1"
+  fi
+  echo "${value:0:$index}${flipped}${value:$((index+1))}"
+}
+
+tampered=$(flip_bit "$ciphertext" 5)
+decrypted=$(printf "2\n%s\n%s\n" "$tampered" "$key" | ./des | tr -d '\r\n')
+
+if [[ "$decrypted" == "$plaintext" ]]; then
+  echo "Tamper negative test failed: plaintext unexpectedly recovered"
+  exit 1
 fi
 
-echo "Tamper test: If even one bit in ciphertext is flipped,"
-echo "decryption should produce different output than original plaintext."
-echo ""
-echo "Example:"
-echo "- Original plaintext:  0001001000110100010101100111100010011010101111001101111011110001"
-echo "- After encryption and bit-flip, decrypted text should NOT match original"
-echo ""
-
-echo "✓ Tamper detection principle verified"
-echo "Note: Full implementation requires interactive test environment"
-exit 0
+echo "PASS: tamper negative"

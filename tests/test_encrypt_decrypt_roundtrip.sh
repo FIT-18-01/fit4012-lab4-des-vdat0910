@@ -1,28 +1,17 @@
 #!/usr/bin/env bash
-# Test that plaintext -> encrypt -> decrypt returns original plaintext
-# This is the fundamental property of a working cipher
-
 set -euo pipefail
 
-echo "===== Test 2: Encrypt-Decrypt Round-trip ====="
+g++ -std=c++17 -Wall -Wextra -pedantic des.cpp -o des
 
-cd "$(dirname "$0")/.."
+plaintext="0000000100100011010001010110011110001001101010111100110111101111"
+key="0001001100110100010101110111100110011011101111001101111111110001"
 
-# Compile if not already compiled
-if [ ! -f des ]; then
-    g++ -std=c++17 -Wall -Wextra -pedantic des.cpp -o des
+ciphertext=$(printf "1\n%s\n%s\n" "$plaintext" "$key" | ./des | tr -d '\r\n')
+decrypted=$(printf "2\n%s\n%s\n" "$ciphertext" "$key" | ./des | tr -d '\r\n')
+
+if [[ "$decrypted" != "$plaintext" ]]; then
+  echo "Round-trip failed. Expected $plaintext, got $decrypted"
+  exit 1
 fi
 
-# Run encryption/decryption test
-OUTPUT=$(./des)
-
-echo "$OUTPUT"
-
-# Check both encryption and decryption results
-if echo "$OUTPUT" | grep -q "Match: YES"; then
-    echo "✓ Round-trip encryption/decryption test PASSED"
-    exit 0
-else
-    echo "✗ Round-trip encryption/decryption test FAILED"
-    exit 1
-fi
+echo "PASS: DES round-trip"

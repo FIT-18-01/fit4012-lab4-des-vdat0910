@@ -23,6 +23,34 @@ string Xor(const string& a, const string& b) {
     return result;
 }
 
+bool is_binary_string(const string& value) {
+    if (value.empty()) {
+        return false;
+    }
+    for (char c : value) {
+        if (c != '0' && c != '1') {
+            return false;
+        }
+    }
+    return true;
+}
+
+string pad_to_block(const string& value, size_t block_size) {
+    size_t remainder = value.size() % block_size;
+    if (remainder == 0) {
+        return value;
+    }
+    return value + string(block_size - remainder, '0');
+}
+
+vector<string> split_blocks(const string& value, size_t block_size) {
+    vector<string> blocks;
+    for (size_t i = 0; i < value.size(); i += block_size) {
+        blocks.push_back(value.substr(i, block_size));
+    }
+    return blocks;
+}
+
 // Initial Permutation (IP)
 string initial_permutation(const string& input) {
     const int initial_permutation[64] = {
@@ -67,6 +95,7 @@ class KeyGenerator {
 private:
     string key;
     vector<string> roundKeys;
+    bool print_round_keys;
 
     // PC1 Table
     const int pc1[56] = {
@@ -102,7 +131,8 @@ private:
     }
 
 public:
-    KeyGenerator(const string& input_key) : key(input_key) {}
+    KeyGenerator(const string& input_key, bool should_print_round_keys = false)
+        : key(input_key), print_round_keys(should_print_round_keys) {}
 
     void generateRoundKeys() {
         roundKeys.clear();
@@ -138,8 +168,9 @@ public:
 
             roundKeys.push_back(roundKey);
 
-            // Optional: print key
-            cout << "Key " << i + 1 << ": " << roundKey << endl;
+            if (print_round_keys) {
+                cout << "Key " << i + 1 << ": " << roundKey << endl;
+            }
         }
     }
 
@@ -278,42 +309,6 @@ class DES {
         }
 };
     
-// Function to add zero padding
-string add_zero_padding(const string& input, int block_size = 64) {
-    int remainder = input.length() % block_size;
-    if (remainder != 0) {
-        return input + string(block_size - remainder, '0');
-    }
-    return input;
-}
-
-// Function to convert string to binary
-string string_to_binary(const string& input) {
-    string binary = "";
-    for (char c : input) {
-        binary += bitset<8>(c).to_string();
-    }
-    return binary;
-}
-
-// Function to convert binary to ASCII string (remove padding)
-string binary_to_string(const string& binary) {
-    string result = "";
-    for (size_t i = 0; i + 8 <= binary.length(); i += 8) {
-        result += (char)stoi(binary.substr(i, 8), nullptr, 2);
-    }
-    return result;
-}
-
-// Function to split binary string into blocks
-vector<string> split_into_blocks(const string& input, int block_size = 64) {
-    vector<string> blocks;
-    for (size_t i = 0; i < input.length(); i += block_size) {
-        blocks.push_back(input.substr(i, block_size));
-    }
-    return blocks;
-}
-
 // Class to perform DES Decryption
 class DESDecrypt {
     private:
@@ -444,35 +439,146 @@ class DESDecrypt {
         }
 };
 
+string des_encrypt_block(const string& block, const string& key) {
+    KeyGenerator keygen(key);
+    keygen.generateRoundKeys();
+    DES des(keygen.getRoundKeys());
+    return des.encrypt(block);
+}
+
+string des_decrypt_block(const string& block, const string& key) {
+    KeyGenerator keygen(key);
+    keygen.generateRoundKeys();
+    DESDecrypt des_decrypt(keygen.getRoundKeys());
+    return des_decrypt.decrypt(block);
+}
+
+string des_encrypt_multiblock(const string& plaintext, const string& key) {
+    string padded = pad_to_block(plaintext, 64);
+    vector<string> blocks = split_blocks(padded, 64);
+    string output;
+    for (const string& block : blocks) {
+        output += des_encrypt_block(block, key);
+    }
+    return output;
+}
+
+string des_decrypt_multiblock(const string& ciphertext, const string& key) {
+    vector<string> blocks = split_blocks(ciphertext, 64);
+    string output;
+    for (const string& block : blocks) {
+        output += des_decrypt_block(block, key);
+    }
+    return output;
+}
+
+string triple_des_encrypt_block(const string& plaintext, const string& k1, const string& k2, const string& k3) {
+    string step1 = des_encrypt_block(plaintext, k1);
+    string step2 = des_decrypt_block(step1, k2);
+    return des_encrypt_block(step2, k3);
+}
+
+string triple_des_decrypt_block(const string& ciphertext, const string& k1, const string& k2, const string& k3) {
+    string step1 = des_decrypt_block(ciphertext, k3);
+    string step2 = des_encrypt_block(step1, k2);
+    return des_decrypt_block(step2, k1);
+}
+
 // Main function
 int main() {
-    // Example plaintext (64 bits)
-    string plaintext = "0001001000110100010101100111100010011010101111001101111011110001";
-    
-    // Example key (64 bits)
-    string key = "0001001100110100010101110111100110011011101111001101111111110001";
-    
-    cout << "====== DES Encryption/Decryption Demo ======" << endl;
-    cout << "Plaintext:  " << plaintext << endl;
-    cout << "Key:        " << key << endl << endl;
-    
-    // Generate round keys
-    KeyGenerator keygen(key);
-    keygen.generateRoundKeys(); 
-    
-    vector<string> roundKeys = keygen.getRoundKeys();
-    cout << endl;
-    
-    // Create DES object and encrypt
-    DES des(roundKeys);
-    string ciphertext = des.encrypt(plaintext);
-    cout << "Ciphertext: " << ciphertext << endl << endl;
-    
-    // Create DES Decrypt object and decrypt
-    DESDecrypt des_decrypt(roundKeys);
-    string decrypted = des_decrypt.decrypt(ciphertext);
-    cout << "Decrypted:  " << decrypted << endl;
-    cout << "Match: " << (decrypted == plaintext ? "YES" : "NO") << endl;
-    
-    return 0;
+    int mode = 0;
+    if (!(cin >> mode)) {
+        return 0;
+    }
+
+    if (mode == 1) {
+        string plaintext;
+        string key;
+        if (!(cin >> plaintext >> key)) {
+            cerr << "Missing plaintext or key." << endl;
+            return 1;
+        }
+        if (!is_binary_string(plaintext)) {
+            cerr << "Plaintext must be a binary string." << endl;
+            return 1;
+        }
+        if (key.size() != 64 || !is_binary_string(key)) {
+            cerr << "Key must be 64-bit binary." << endl;
+            return 1;
+        }
+        cout << des_encrypt_multiblock(plaintext, key) << endl;
+        return 0;
+    }
+
+    if (mode == 2) {
+        string ciphertext;
+        string key;
+        if (!(cin >> ciphertext >> key)) {
+            cerr << "Missing ciphertext or key." << endl;
+            return 1;
+        }
+        if (!is_binary_string(ciphertext)) {
+            cerr << "Ciphertext must be a binary string." << endl;
+            return 1;
+        }
+        if (ciphertext.size() % 64 != 0) {
+            cerr << "Ciphertext length must be a multiple of 64." << endl;
+            return 1;
+        }
+        if (key.size() != 64 || !is_binary_string(key)) {
+            cerr << "Key must be 64-bit binary." << endl;
+            return 1;
+        }
+        cout << des_decrypt_multiblock(ciphertext, key) << endl;
+        return 0;
+    }
+
+    if (mode == 3) {
+        string plaintext;
+        string k1;
+        string k2;
+        string k3;
+        if (!(cin >> plaintext >> k1 >> k2 >> k3)) {
+            cerr << "Missing plaintext or keys." << endl;
+            return 1;
+        }
+        if (plaintext.size() != 64 || !is_binary_string(plaintext)) {
+            cerr << "Plaintext must be 64-bit binary." << endl;
+            return 1;
+        }
+        if (k1.size() != 64 || !is_binary_string(k1) ||
+            k2.size() != 64 || !is_binary_string(k2) ||
+            k3.size() != 64 || !is_binary_string(k3)) {
+            cerr << "Keys must be 64-bit binary." << endl;
+            return 1;
+        }
+        cout << triple_des_encrypt_block(plaintext, k1, k2, k3) << endl;
+        return 0;
+    }
+
+    if (mode == 4) {
+        string ciphertext;
+        string k1;
+        string k2;
+        string k3;
+        if (!(cin >> ciphertext >> k1 >> k2 >> k3)) {
+            cerr << "Missing ciphertext or keys." << endl;
+            return 1;
+        }
+        if (ciphertext.size() != 64 || !is_binary_string(ciphertext)) {
+            cerr << "Ciphertext must be 64-bit binary." << endl;
+            return 1;
+        }
+        if (k1.size() != 64 || !is_binary_string(k1) ||
+            k2.size() != 64 || !is_binary_string(k2) ||
+            k3.size() != 64 || !is_binary_string(k3)) {
+            cerr << "Keys must be 64-bit binary." << endl;
+            return 1;
+        }
+        cout << triple_des_decrypt_block(ciphertext, k1, k2, k3) << endl;
+        return 0;
+    }
+
+    cerr << "Invalid mode." << endl;
+    return 1;
 }
